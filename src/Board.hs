@@ -38,8 +38,8 @@ showLine (s:xs) =
     show s ++ " " ++ showLine xs     
 
 showLineLn it xs 
-    | it < 10 = " " ++ show it ++ ":  " ++ showLine xs ++ "\n"
-    | it >= 10 = show it ++ ":  " ++ showLine xs ++ "\n"
+    | it <= 10 = " " ++ show (it-1) ++ ":  " ++ showLine xs ++ "\n"
+    | it > 10 = show (it-1) ++ ":  " ++ showLine xs ++ "\n"
 
 showBoard it [] = ""
 showBoard it (x:xs) = 
@@ -66,7 +66,7 @@ insertInEmpty (Board arr) x y u
 	|((arr !! x) !! y) /= E = (Board arr)
 
 insertBattle (Board arr) x y u
-	|((x >= 0 ) && (x < (length arr)) && (y >= 0 ) && (y < (length arr))) = insertInEmpty (Board arr) x y u
+	|((x >= 0 ) && (x < (length arr)) && (y >= 0 ) && (y < (length arr))) = insertInEmpty (Board arr) (x - 1) (y - 1) u
 	|((x < 0 ) || (x >= (length arr)) || (y < 0 ) || (y >= (length arr))) = (Board arr)
 
 
@@ -108,12 +108,12 @@ hasFiveBias arr x y u it
 -- ##########     Tests Elements     #################################
 -- ###################################################################
 
-testBoard = initBoard 19 E
-a = initBoard 19 E
-b = insertInBoard a 3 3 X
-c = insertInBoard b 3 4 X
-d = insertInBoard c 3 5 X
-e = insertInBoard d 3 6 X
-f = insertInBoard e 3 7 X
-g = insertInBoard f 3 8 X
-h = insertInBoard f 3 5 O
+-- testBoard = initBoard 19 E
+-- a = initBoard 19 E
+-- b = insertInBoard a 3 3 X
+-- c = insertInBoard b 3 4 X
+-- d = insertInBoard c 3 5 X
+-- e = insertInBoard d 3 6 X
+-- f = insertInBoard e 3 7 X
+-- g = insertInBoard f 3 8 X
+-- h = insertInBoard f 3 5 O

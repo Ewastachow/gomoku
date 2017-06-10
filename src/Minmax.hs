@@ -9,8 +9,7 @@ import Board as Br
 
 data Coords = Coords { xPos::Int, yPos::Int } deriving (Show, Eq)
 
-data MinMaxTree = MinMaxTree { value::Int, board::Board, nextSteps::[MinMaxTree]} | 
-                    MinMax { value::Int, board::Board }
+data MinMaxTree = MinMaxTree { value::Int, board::Board, nextSteps::[MinMaxTree]}
 
 instance Ord Coords where
     compare (Coords a b) (Coords c d)
@@ -22,29 +21,47 @@ instance Ord Coords where
 -- ##########     Neighborhood     ###################################
 -- ###################################################################
 
-neighborhood arr = neighborhoodLine arr 0 arr
+neighborhood:: [[Part]] -> [Coords]
+neighborhood arr = removeDuplicates (neighborhoodLine arr 0 arr)
 
-neighborhoodLine arr ity (x:xs) = Set.union (neighborhoodCoord arr ity 0 x) (neighborhoodLine arr (ity+1) xs)
+neighborhoodLine:: [[Part]] -> Int -> [[Part]] -> [Coords]
+neighborhoodLine arr ity [] = []
+neighborhoodLine arr ity (x:xs) = ((neighborhoodCoord arr ity 0 x) ++ (neighborhoodLine arr (ity+1) xs))
 
-neighborhoodCoord arr ity itx (x:xs) = Set.union (neighborhoodSelectedCoord arr itx ity) 
-                                                (neighborhoodCoord arr ity (itx+1) xs)
+neighborhoodCoord:: [[Part]] -> Int -> Int -> [Part] -> [Coords]
+neighborhoodCoord arr ity itx [] = []
+neighborhoodCoord arr ity itx (x:xs) = ((neighborhoodSelectedCoord arr itx ity) ++ (neighborhoodCoord arr ity (itx+1) xs))
 
+neighborhoodSelectedCoord:: [[Part]] -> Int -> Int -> [Coords]
 neighborhoodSelectedCoord arr x y
-    | ((arr !! x) !! y) == E  = Set.empty
+    | ((arr !! x) !! y) == E  = []
     | ((arr !! x) !! y) /= E  = createNeighborhood arr x y
 
+createNeighborhood:: [[Part]] -> Int -> Int -> [Coords]
 createNeighborhood arr x y = 
-    Set.union 
-    (Set.union (Set.union (isRightNeighbor arr (x-1) (y-1)) (isRightNeighbor arr x (y-1))) 
-        (Set.union (isRightNeighbor arr (x+1) (y-1)) (isRightNeighbor arr (x-1) y))) 
-    (Set.union (Set.union (isRightNeighbor arr (x+1) y) (isRightNeighbor arr (x-1) (y+1))) 
-        (Set.union (isRightNeighbor arr x (y+1)) (isRightNeighbor arr (x+1) (y+1))))
+     (isRightNeighbor arr (x-1) (y-1)) ++ (isRightNeighbor arr x (y-1)) ++
+        (isRightNeighbor arr (x+1) (y-1)) ++ (isRightNeighbor arr (x-1) y) ++
+        (isRightNeighbor arr (x+1) y) ++ (isRightNeighbor arr (x-1) (y+1)) ++
+        (isRightNeighbor arr x (y+1)) ++ (isRightNeighbor arr (x+1) (y+1))
 
+isRightNeighbor:: [[Part]] -> Int -> Int -> [Coords]
 isRightNeighbor arr x y 
     | ((((arr !! x) !! y) == E) && (x >= 0) && (y >= 0) && (x < (length arr)) && (x < (length arr))) 
-        = Set.singleton (Coords x y)
+        = [(Coords x y)]
     | ((((arr !! x) !! y) /= E) || (x < 0) || (y < 0) || (x >= (length arr)) || (x >= (length arr))) 
-        = Set.empty
+        = []
+
+removeDuplicates :: Eq a => [a] -> [a]
+removeDuplicates = rdHelper []
+    where rdHelper seen [] = seen
+          rdHelper seen (x:xs)
+              | x `elem` seen = rdHelper seen xs
+              | otherwise = rdHelper (seen ++ [x]) xs
+
+merge :: [a] -> [a] -> [a]
+merge xs [] = xs
+merge [] ys = ys
+merge (x:xs) (y:ys) = x : y : merge xs ys
 
 
 -- ###################################################################
@@ -84,25 +101,58 @@ notHisMove board
 -- ##########     MinMaxTree     #####################################
 -- ###################################################################
 
---nextMove:: Board -> Board
---nextMove boardArr = nextMoveDeep 3 boardArr
+-- nextMove:: Board -> Board
+-- nextMove boardArr = generateMinMaxTree 3 boardArr
 
-nextMoveDeep deep boardArr = generateMoves deep boardArr (whoseMove boardArr)
+generateMinMaxTree deep boardArr = generateMoves deep boardArr (whoseMove boardArr)
 
 generateMoves:: Int -> Board -> Part -> MinMaxTree
-generateMoves deep boardArr u = 
-    MinMaxTree 0 boardArr (minMaxChildren deep boardArr (neighborhood (Br.board boardArr)) u)
+generateMoves deep boardArr u
+    | deep > 0 = MinMaxTree 0 boardArr (minMaxChildren deep boardArr (neighborhood (Br.board boardArr)) u)
+    | deep == 0 = MinMaxTree 0 boardArr []
 
-minMaxChildren:: Int -> Board -> Set a -> Part -> [a]
-minMaxChildren deep boardArr set u = ((generateMove deep boardArr (Set.elemAt 0 (Set.delete 0 set)) u):[]) ++ (minMaxChildren deep boardArr set u)
+minMaxChildren:: Int -> Board -> [Coords] -> Part -> [MinMaxTree]
+minMaxChildren deep boardArr (x:xs) u = ((generateMove deep boardArr x u):[]) ++ (minMaxChildren deep boardArr xs u)
 
--- generateMove:: Int -> Board -> Coords -> MinMaxTree
-generateMove deep boardArr (Coords x y) u
-    | deep > 0 = nextMoveDeep (deep-1) (Br.insertInBoard x y u)
-    | deep == 0 = MinMaxTree 0 (Br.insertInBoard x y u) []
+generateMove:: Int -> Board -> Coords -> Part -> MinMaxTree
+generateMove deep boardArr (Coords x y) u = generateMinMaxTree (deep-1) (Br.insertInBoard boardArr x y u)
+
+
+-- ###################################################################
+-- ##########     Apply Values To MinMaxTree     #####################
+-- ###################################################################
+
+setMinMaxTreeValues x = 
+
+setChildrenVales (MinMaxTree val boardArr []) = 
+setChildrenVales (MinMaxTree val boardArr children) = 
+
+sumChildrenVales (MinMaxTree val boardArr []) = rateBoard boardArr
+sumChildrenVales (MinMaxTree val boardArr children) = sum (setToListMMTree children)
+
+setToListMMTree [] = []
+setToListMMTree (x:xs) = (setMinMaxTreeValues x):[] ++ setToListMMTree xs
+-- pojebałam coś z value i minmaxtree w listach
+
+
+-- ###################################################################
+-- ##########     Select Best Board     ##############################
+-- ###################################################################
+
+choseBestChildren:: MinMaxTree -> ..... -> Board
     
 
+
+
 -- minMax board 
+
+
+
+
+
+
+
+
 
 
 
