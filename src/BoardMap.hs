@@ -35,9 +35,19 @@ nextRow size y
     | y /= (size-1) = ""
     | y == (size-1) = "\n"
 
-getMap (Board(m, _) _) = m
+getMap (Board(m, _)) = m
 
-
+toString (Board arr size) =
+    iterate([Coordinates x y | y <- [0..(size-1)], x <- [0..(size-1)]])
+        where
+            iterate [element] = (mapToCharacter element) ++ (newLine element)
+            iterate (element:listOfCoordinates) = (mapToCharacter element) ++ (newLine element) ++ iterate(listOfCoordinates)
+            mapToCharacter coordinates
+                | (member coordinates map) = show(fromJust (Map.lookup coordinates map)) 
+                | otherwise = " "
+            newLine (Coordinates x y)
+                | (x == 19) = "\n"
+                | otherwise = ""
 
 --instance Show (Board) where
 --    show x = showBoard x

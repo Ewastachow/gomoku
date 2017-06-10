@@ -13,8 +13,6 @@ instance Show Part where
     show O = "O"
     show E = "_"
 
-data Coords = Coords { x::Int, y::Int } deriving Show
-
 data Board = Board { board::[[Part]] }
 
 instance Show Board where
@@ -63,14 +61,20 @@ insertInRow arr y u = (element y .~ u) arr
 
 insertInBoard (Board arr) x y u = Board $ (element x .~ insertInRow (arr !! x) y u) arr
 
-insertBattle (Board arr) x y u 
+insertInEmpty (Board arr) x y u 
 	|((arr !! x) !! y) == E = insertInBoard (Board arr) x y u
 	|((arr !! x) !! y) /= E = (Board arr)
+
+insertBattle (Board arr) x y u
+	|((x >= 0 ) && (x < (length arr)) && (y >= 0 ) && (y < (length arr))) = insertInEmpty (Board arr) x y u
+	|((x < 0 ) || (x >= (length arr)) || (y < 0 ) || (y >= (length arr))) = (Board arr)
 
 
 -- ###################################################################
 -- ##########     Is Won     #########################################
 -- ###################################################################
+
+finish board = ((won board X) || (won board O))
 
 won arr u = wonBoard (board arr) (board arr) u 0
 
@@ -98,7 +102,7 @@ hasFiveBias _ _ _ _ 0 = True
 hasFiveBias arr x y u it 
 	|((x >= 0) && (y >= 0)) = ((((arr !! x) !! y) == u) && (hasFiveBias arr (x-1) (y-1) u (it-1)))
 	|((x < 0) || (y < 0)) = False
-
+-- dodać drugi skos
 
 -- ###################################################################
 -- ##########     Tests Elements     #################################
