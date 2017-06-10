@@ -9,7 +9,9 @@ import Board as Br
 
 data Coords = Coords { xPos::Int, yPos::Int } deriving (Show, Eq)
 
-data MinMaxTree = MinMaxTree { value::Int, board::Board, nextSteps::[MinMaxTree]}
+data MinMaxTree = MinMaxTree { value::Int, board::Br.Board, nextSteps::[MinMaxTree]} | Empty
+
+data ComparingTrees = ComparingTrees { mmTreevalue::Int, mmTree::MinMaxTree }
 
 instance Ord Coords where
     compare (Coords a b) (Coords c d)
@@ -22,7 +24,20 @@ instance Ord Coords where
 -- ###################################################################
 
 neighborhood:: [[Part]] -> [Coords]
-neighborhood arr = removeDuplicates (neighborhoodLine arr 0 arr)
+neighborhood arr 
+    | (howMany arr (whoseMove (Br.Board arr))) > 0 = removeDuplicates (neighborhoodLine arr 0 arr)
+    | (((howMany arr (whoseMove (Br.Board arr))) == 0) && ((length arr) > 5)) = ([Coords 4 4] ++ [Coords 3 4])
+    | (((howMany arr (whoseMove (Br.Board arr))) == 0) && ((length arr) <= 5)) = ([Coords 0 0] ++ [Coords 1 1])
+-- startedPart:: [[Part]] -> [Coords]
+-- startedPart arr 
+--     |((((arr !! ((((length arr)::Int) /2)::Int))) !! (((length arr)/2)::Int)) == E) = [Coords ((length arr)/2) ((length arr)/2)]
+--     |((((arr !! ((((length arr)/2)::Int) + 1))) !! (((length arr)/2)::Int)) == E) = [Coords ((length arr)/2) ((length arr)/2)]
+
+-- middleArray arr = (((length arr)::Int) / 2)::Int
+
+-- startPosition arr =
+
+
 
 neighborhoodLine:: [[Part]] -> Int -> [[Part]] -> [Coords]
 neighborhoodLine arr ity [] = []
@@ -34,8 +49,8 @@ neighborhoodCoord arr ity itx (x:xs) = ((neighborhoodSelectedCoord arr itx ity) 
 
 neighborhoodSelectedCoord:: [[Part]] -> Int -> Int -> [Coords]
 neighborhoodSelectedCoord arr x y
-    | ((arr !! x) !! y) == E  = []
-    | ((arr !! x) !! y) /= E  = createNeighborhood arr x y
+    | ((arr !! x) !! y) /= (whoseMove (Br.Board arr)) = []
+    | ((arr !! x) !! y) == (whoseMove (Br.Board arr)) = createNeighborhood arr x y
 
 createNeighborhood:: [[Part]] -> Int -> Int -> [Coords]
 createNeighborhood arr x y = 
@@ -84,8 +99,10 @@ whoseMove board
     | (howMany (Br.board board) X) == (howMany (Br.board board) O) = X
     | (howMany (Br.board board) X) /= (howMany (Br.board board) O) = O
 
+howMany [] u = 0
 howMany (x:xs) u = howManyLine x u + howMany xs u
 
+howManyLine [] u = 0
 howManyLine (x:xs) u = howManyCoords x u + howManyLine xs u
 
 howManyCoords el u
@@ -112,6 +129,7 @@ generateMoves deep boardArr u
     | deep == 0 = MinMaxTree 0 boardArr []
 
 minMaxChildren:: Int -> Board -> [Coords] -> Part -> [MinMaxTree]
+minMaxChildren deep boardArr [] u = []
 minMaxChildren deep boardArr (x:xs) u = ((generateMove deep boardArr x u):[]) ++ (minMaxChildren deep boardArr xs u)
 
 generateMove:: Int -> Board -> Coords -> Part -> MinMaxTree
@@ -122,16 +140,30 @@ generateMove deep boardArr (Coords x y) u = generateMinMaxTree (deep-1) (Br.inse
 -- ##########     Apply Values To MinMaxTree     #####################
 -- ###################################################################
 
-setMinMaxTreeValues x = 
+-- setMinMaxTreeValues x = 
 
-setChildrenVales (MinMaxTree val boardArr []) = 
-setChildrenVales (MinMaxTree val boardArr children) = 
+-- setChildrenVales (MinMaxTree val boardArr []) = 
+-- setChildrenVales (MinMaxTree val boardArr children) = 
 
-sumChildrenVales (MinMaxTree val boardArr []) = rateBoard boardArr
-sumChildrenVales (MinMaxTree val boardArr children) = sum (setToListMMTree children)
+-- sumChildrenVales (MinMaxTree val boardArr []) = rateBoard boardArr
+-- sumChildrenVales (MinMaxTree val boardArr children) = sum (setToListMMTree children)
 
-setToListMMTree [] = []
-setToListMMTree (x:xs) = (setMinMaxTreeValues x):[] ++ setToListMMTree xs
+-- setToListMMTree [] = []
+-- setToListMMTree (x:xs) = (setMinMaxTreeValues x):[] ++ setToListMMTree xs
+
+
+
+
+calculateMMTValue (MinMaxTree val boardArr []) = rateBoard boardArr
+calculateMMTValue (MinMaxTree val boardArr children) = calculateMMTValueTab children
+
+calculateMMTValueTab [] = 0
+calculateMMTValueTab (x:xs) = (calculateMMTValue x) + calculateMMTValueTab xs
+
+generateComparingTreeTable [] = []
+generateComparingTreeTable (x:xs) = ((ComparingTrees (calculateMMTValue x) x):[]) ++ generateComparingTreeTable xs
+
+
 -- pojebałam coś z value i minmaxtree w listach
 
 
@@ -139,11 +171,20 @@ setToListMMTree (x:xs) = (setMinMaxTreeValues x):[] ++ setToListMMTree xs
 -- ##########     Select Best Board     ##############################
 -- ###################################################################
 
-choseBestChildren:: MinMaxTree -> ..... -> Board
+--choseBestChildren:: MinMaxTree -> ..... -> Board
+
     
+selectBestFromComparingTreeTable:: [ComparingTrees] -> ComparingTrees -> ComparingTrees
+selectBestFromComparingTreeTable [] bestOption = bestOption
+selectBestFromComparingTreeTable (x:xs) bestOption
+    | (mmTreevalue x) > (mmTreevalue (selectBestFromComparingTreeTable xs bestOption)) = x
+    | (mmTreevalue x) <= (mmTreevalue (selectBestFromComparingTreeTable xs bestOption)) = (selectBestFromComparingTreeTable xs bestOption)
 
+selectBestBoard:: MinMaxTree -> Br.Board
+selectBestBoard minMaxTree = (Minmax.board (mmTree (selectBestFromComparingTreeTable (generateComparingTreeTable (nextSteps minMaxTree)) (ComparingTrees (-20) Minmax.Empty))))
 
-
+nextStep:: Br.Board -> Br.Board
+nextStep boardArr = selectBestBoard (generateMinMaxTree 3 boardArr)
 -- minMax board 
 
 
