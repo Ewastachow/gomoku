@@ -97,7 +97,8 @@ rateBoard board
 whoseMove:: Board -> Part
 whoseMove board
     | (howMany (Br.board board) X) == (howMany (Br.board board) O) = X
-    | (howMany (Br.board board) X) /= (howMany (Br.board board) O) = O
+    | (howMany (Br.board board) X) > (howMany (Br.board board) O) = O
+    | (howMany (Br.board board) X) < (howMany (Br.board board) O) = X
 
 howMany [] u = 0
 howMany (x:xs) u = howManyLine x u + howMany xs u
@@ -133,7 +134,7 @@ minMaxChildren deep boardArr [] u = []
 minMaxChildren deep boardArr (x:xs) u = ((generateMove deep boardArr x u):[]) ++ (minMaxChildren deep boardArr xs u)
 
 generateMove:: Int -> Board -> Coords -> Part -> MinMaxTree
-generateMove deep boardArr (Coords x y) u = generateMinMaxTree (deep-1) (Br.insertInBoard boardArr x y u)
+generateMove deep boardArr (Coords x y) u = generateMinMaxTree (deep-1) (Br.insertBattle boardArr (x+1) (y+1) u)
 
 
 -- ###################################################################

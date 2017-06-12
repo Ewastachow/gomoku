@@ -3,9 +3,47 @@ module Main where
 import Data.String
 import Board as Br
 import Minmax as Mm
+import System.IO(hFlush, stdout)
 
 main::IO()
-main = undefined
+main = game a "o"
+
+game:: Board -> String -> IO ()
+game board "o" = do
+  if (Br.finish board) then
+    execute board "have won"
+  else do
+    print board
+    putStr "prompt> "
+    hFlush stdout
+    execute board "o"
+game board "pc" = do
+  if (Br.finish board) then
+    execute board "have won"
+  else do
+    print board
+    execute board "pc"
+
+execute :: Board -> String -> IO ()
+execute _ "quit" = putStrLn "Game is closed."
+execute board "pc" = do
+  game (nextStep board) "o"
+execute board "o" = do
+  putStrLn "X position: "
+  x <- getLine
+  putStrLn "Y position: "
+  y <- getLine
+  game (insertBattle board (read x :: Int) (read y :: Int) O) "pc"
+execute board "have won" =
+  putStrLn (show board ++ "Player have won!")
+execute board _ = do
+  putStrLn "Commands that you can use: \n \
+  \ o    = put O on board \n \
+  \ x    = put X on board \n \
+  \ quit = quit the game "
+  game board "o"
+
+
 
 
 

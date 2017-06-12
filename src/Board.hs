@@ -38,8 +38,8 @@ showLine (s:xs) =
     show s ++ " " ++ showLine xs     
 
 showLineLn it xs 
-    | it <= 10 = " " ++ show (it-1) ++ ":  " ++ showLine xs ++ "\n"
-    | it > 10 = show (it-1) ++ ":  " ++ showLine xs ++ "\n"
+    | it < 10 = " " ++ show it ++ ":  " ++ showLine xs ++ "\n"
+    | it >= 10 = show it ++ ":  " ++ showLine xs ++ "\n"
 
 showBoard it [] = ""
 showBoard it (x:xs) = 
