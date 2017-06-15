@@ -14,7 +14,7 @@ game board "o" = do
     execute board "have won"
   else do
     print board
-    putStr "prompt> "
+    putStr "gomoku> "
     hFlush stdout
     execute board "o"
 game board "pc" = do
@@ -29,9 +29,9 @@ execute _ "quit" = putStrLn "Game is closed."
 execute board "pc" = do
   game (nextStep board) "o"
 execute board "o" = do
-  putStrLn "X position: "
+  putStrLn "Vertical: "
   x <- getLine
-  putStrLn "Y position: "
+  putStrLn "Horizontal: "
   y <- getLine
   game (insertBattle board (read x :: Int) (read y :: Int) O) "pc"
 execute board "have won" =
