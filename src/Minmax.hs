@@ -52,8 +52,8 @@ howManyRateLine:: [[Part]] -> Int -> [Part] -> Part -> Int -> Int -> Int
 howManyRateLine _ _ [] _ _ _ = 0
 howManyRateLine arr x (y:ys) u it size
     | y == u = (howManyRateCoords arr x it u size) + (howManyRateLine arr x ys u (it+1) size)
-    | y == (notPart u) = ((0 - (howManyRateCoords arr x it (notPart u) size)) - (howManyRateLine arr x ys (notPart u) (it+1) size))
-    | otherwise = 0
+    | y == (notPart u) = ((0 - (howManyRateCoords arr x it (notPart u) size)) + (howManyRateLine arr x ys u (it+1) size))
+    | otherwise = 0 + (howManyRateLine arr x ys u (it+1) size)
 
 howManyRateCoords:: [[Part]] -> Int -> Int -> Part -> Int -> Int
 howManyRateCoords arr x y u size 
@@ -87,7 +87,7 @@ setComparingTreeTableValue ctTable whoComp whoStarted deep = [(ComparingTree (bo
 -- ###################################################################
 
 selectBestBoard:: [ComparingTree] -> Board
-selectBestBoard ctList = (boardCT (chooseCTBest ctList (ComparingTree (initNewBoard 1) (-1000))))
+selectBestBoard (first:ctList) = (boardCT (chooseCTBest ctList first))
 
 chooseCTBest:: [ComparingTree] -> ComparingTree -> ComparingTree
 chooseCTBest [] best = best
@@ -138,3 +138,10 @@ testRate2 = rateBoard tmpRate8 O
 testRate3 = rateBoard tmpRate9 O
 testRate4 = rateBoard tmpRate10 O
 testRate5 = rateBoard tmpRate11 O
+
+tmp2Rate1 = initNewBoard 5
+tmp2Rate2 = insertToBoard tmp2Rate1 1 1 X
+tmp2Rate3 = insertToBoard tmp2Rate2 1 2 X
+tmp2Rate4 = insertToBoard tmp2Rate3 1 3 X
+tmp2Rate5 = insertToBoard tmp2Rate4 1 4 X
+test2Rate1 = rateBoard tmp2Rate5 O

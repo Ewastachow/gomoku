@@ -7,7 +7,18 @@ import Control.Lens
 
 alphabet = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","W","Y","Z"]
 
-data Part = X | O | E deriving Eq
+data Part = X | O | E
+
+instance Eq Part where
+    X == X = True
+    O == O = True
+    E == E = True
+    X == O = False
+    X == E = False
+    O == X = False
+    E == X = False
+    E == O = False
+    O == E = False
 
 instance Show Part where
     show X = "X"
@@ -199,8 +210,10 @@ hasXBias arr x y u it
 hasXBiasCross:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
 hasXBiasCross _ _ _ _ 0 = True
 hasXBiasCross arr x y u it 
-    |((x >= 0) && (y >= 0) && (y < ((length arr)-1))) = (((getPartFromArr arr x y) == u) && (hasXBias arr (x-1) (y+1) u (it-1)))
+    |((x >= 0) && (y >= 0) && (y < (length arr))) = (((getPartFromArr arr x y) == u) && (hasXBiasCross arr (x-1) (y+1) u (it-1)))
     |otherwise = False
+
+    -- to ostatnie chyba nie działa
 
 
 -- ###################################################################
@@ -349,3 +362,18 @@ testNeighborhood3 = neighborhood testInsert6 -- max max
 
 -- Winning
 
+tmp1Winning = initNewBoard 19
+tmp1Winning1 = insertToBoard tmp1Winning 7 5 X
+tmp1Winning2 = insertToBoard tmp1Winning1 6 6 X
+tmp1Winning3 = insertToBoard tmp1Winning2 5 7 X
+tmp1Winning4 = insertToBoard tmp1Winning3 4 8 X
+tmp1Winning5 = insertToBoard tmp1Winning4 3 9 X
+testWinning1 = finish tmp1Winning5
+
+tmp2Winning = initNewBoard 19
+tmp2Winning1 = insertToBoard tmp2Winning 5 5 X
+tmp2Winning2 = insertToBoard tmp2Winning1 5 6 X
+tmp2Winning3 = insertToBoard tmp2Winning2 5 7 X
+tmp2Winning4 = insertToBoard tmp2Winning3 5 8 X
+tmp2Winning5 = insertToBoard tmp2Winning4 5 9 X
+testWinning2 = finish tmp2Winning5
