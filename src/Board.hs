@@ -22,7 +22,7 @@ instance Show Board where
 data Coords = Coords { xPos::Int, yPos::Int } deriving Eq
 
 instance Show Coords where
-    show (Coords a b) = "("++show a++","++show b++") "
+    show (Coords a b) = " ("++show a++","++show b++") "
 
 instance Ord Coords where
     compare (Coords a b) (Coords c d)
@@ -51,7 +51,8 @@ showBoardAll arr =
 
 showFirstLine:: Int -> Int -> String    
 showFirstLine it size
-    | it < size = (alphabet !! it) ++ " " ++ showFirstLine (it+1) size
+    | it < size = show (it+1) ++ " " ++ showFirstLine (it+1) size
+--    | it < size = (alphabet !! it) ++ " " ++ showFirstLine (it+1) size
     | it >= size = ""
 
 showBoard:: Int -> [[Part]] -> String
@@ -69,6 +70,7 @@ showLine [] = ""
 showLine (s:xs) =
     show s ++ " " ++ showLine xs     
 
+
 -- ###################################################################
 -- ##########     Not Part     #######################################
 -- ###################################################################
@@ -77,6 +79,7 @@ notPart:: Part -> Part
 notPart X = O
 notPart O = X
 notPart E = E
+
 
 -- ###################################################################
 -- ##########     Are Coords Valid     ###############################
@@ -105,6 +108,7 @@ isOccupiedBoard (Board arr) x y = isOccupiedArr arr x y
 isOccupiedArr:: [[Part]] -> Int -> Int -> Bool
 isOccupiedArr arr x y = ((getPartFromArr arr x y) /= E)
 
+
 -- ###################################################################
 -- ##########     Get Part     #######################################
 -- ###################################################################
@@ -131,23 +135,10 @@ isLineFull:: [Part] -> Bool
 isLineFull [] = True
 isLineFull (x:xs) = (x /= E) && (isLineFull xs)
 
+
 -- ###################################################################
 -- ##########     Insert In Board     ################################
 -- ###################################################################
-
--- insertInRow arr y u = (element y .~ u) arr
-
--- insertInBoard (Board arr) x y u = Board $ (element x .~ insertInRow (arr !! x) y u) arr
-
--- insertInEmpty (Board arr) x y u 
--- 	|((arr !! x) !! y) == E = insertInBoard (Board arr) x y u
--- 	|((arr !! x) !! y) /= E = (Board arr)
-
--- insertBattle (Board arr) x y u
--- 	|((x >= 0 ) && (x < (length arr)) && (y >= 0 ) && (y < (length arr))) = insertInEmpty (Board arr) (x - 1) (y - 1) u
--- 	|((x < 0 ) || (x >= (length arr)) || (y < 0 ) || (y >= (length arr))) = (Board arr)
-
-----------------------------------------------------------------------
 
 insertToBoard:: Board -> Int -> Int -> Part -> Board
 insertToBoard (Board arr) x y u 
@@ -162,6 +153,7 @@ insertPart arr x y posX posY u
     | (x /= posX) || (y /= posY) = getPartFromArr arr x y
     | (x == posX) && (y == posY) && ((getPartFromArr arr x y) == E) = u
     | otherwise = getPartFromArr arr x y
+
 
 -- ###################################################################
 -- ##########     Is Won     #########################################
@@ -179,35 +171,35 @@ wonBoard arr (x:xs) u it = ((wonLine arr it arr u 0) || (wonBoard arr xs u (it+1
 
 wonLine:: [[Part]] -> Int -> [[Part]] -> Part -> Int -> Bool
 wonLine _ _ [] _ _ = False
-wonLine arr x (y:ys) u it = ((hasFive arr x it u) || (wonLine arr x ys u (it+1)))
+wonLine arr x (y:ys) u it = ((hasX arr x it u 5) || (wonLine arr x ys u (it+1)))
 
-hasFive:: [[Part]] -> Int -> Int -> Part -> Bool
-hasFive arr x y u
-    |(getPartFromArr arr x y) == u = ((hasFiveVertical arr x y u 5) || (hasFiveHorizontally arr x y u 5) || (hasFiveBias arr x y u 5) || (hasFiveBiasCross arr x y u 5))
+hasX:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+hasX arr x y u howMany
+    |(getPartFromArr arr x y) == u = ((hasXVertical arr x y u howMany) || (hasXHorizontally arr x y u howMany) || (hasXBias arr x y u howMany) || (hasXBiasCross arr x y u howMany))
     |otherwise = False
 
-hasFiveVertical:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
-hasFiveVertical _ _ _ _ 0 = True
-hasFiveVertical arr x y u it 
-    |y >= 0 = (((getPartFromArr arr x y) == u) && (hasFiveVertical arr x (y-1) u (it-1)))
+hasXVertical:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+hasXVertical _ _ _ _ 0 = True
+hasXVertical arr x y u it 
+    |y >= 0 = (((getPartFromArr arr x y) == u) && (hasXVertical arr x (y-1) u (it-1)))
     |otherwise = False
 
-hasFiveHorizontally:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
-hasFiveHorizontally _ _ _ _ 0 = True
-hasFiveHorizontally arr x y u it 
-    |x >= 0 = (((getPartFromArr arr x y) == u) && (hasFiveHorizontally arr (x-1) y u (it-1)))
+hasXHorizontally:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+hasXHorizontally _ _ _ _ 0 = True
+hasXHorizontally arr x y u it 
+    |x >= 0 = (((getPartFromArr arr x y) == u) && (hasXHorizontally arr (x-1) y u (it-1)))
     |otherwise = False
 
-hasFiveBias:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
-hasFiveBias _ _ _ _ 0 = True
-hasFiveBias arr x y u it 
-    |((x >= 0) && (y >= 0)) = (((getPartFromArr arr x y) == u) && (hasFiveBias arr (x-1) (y-1) u (it-1)))
+hasXBias:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+hasXBias _ _ _ _ 0 = True
+hasXBias arr x y u it 
+    |((x >= 0) && (y >= 0)) = (((getPartFromArr arr x y) == u) && (hasXBias arr (x-1) (y-1) u (it-1)))
     |otherwise = False
 
-hasFiveBiasCross:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
-hasFiveBiasCross _ _ _ _ 0 = True
-hasFiveBiasCross arr x y u it 
-    |((x >= 0) && (y >= 0) && (y < ((length arr)-1))) = (((getPartFromArr arr x y) == u) && (hasFiveBias arr (x-1) (y+1) u (it-1)))
+hasXBiasCross:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+hasXBiasCross _ _ _ _ 0 = True
+hasXBiasCross arr x y u it 
+    |((x >= 0) && (y >= 0) && (y < ((length arr)-1))) = (((getPartFromArr arr x y) == u) && (hasXBias arr (x-1) (y+1) u (it-1)))
     |otherwise = False
 
 
@@ -217,6 +209,7 @@ hasFiveBiasCross arr x y u it
 
 lastMovePart:: Board -> Part -> Part
 lastMovePart board whoseFirst = notPart (whoseMove board whoseFirst)
+
 
 -- ###################################################################
 -- ##########     Whose move     #####################################
@@ -246,15 +239,10 @@ notHisMove board whoseFirst
     | (whoseMove board whoseFirst) == X = O
     | otherwise = X
 
+
 -- ###################################################################
 -- ##########     Neighborhood     ###################################
 -- ###################################################################
-
--- neighborhood:: [[Part]] -> [Coords]
--- neighborhood arr 
---    | (howMany arr (whoseMove (Br.Board arr))) > 0 = removeDuplicates (neighborhoodLine arr 0 arr)
---    | (((howMany arr (whoseMove (Br.Board arr))) == 0) && ((length arr) > 5)) = ([Coords 4 4] ++ [Coords 3 4])
---    | (((howMany arr (whoseMove (Br.Board arr))) == 0) && ((length arr) <= 5)) = ([Coords 0 0] ++ [Coords 1 1])
 
 neighborhood:: Board -> [Coords]
 neighborhood (Board arr) 

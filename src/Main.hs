@@ -31,7 +31,7 @@ game board "pc" = do
 execute :: Board -> String -> IO ()
 execute _ "quit" = putStrLn "Game is closed."
 execute board "pc" = do
-  game (nextStep board O X 3) "x"
+  game (nextStep board O X 2) "x"
 execute board "x" = do
   putStrLn "Vertical: "
   x <- getLine
