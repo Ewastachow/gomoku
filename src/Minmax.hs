@@ -3,166 +3,117 @@ module Minmax where
 import Data.String
 import Control.Lens
 import Data.List as List
-import Data.Set as Set
 import Board as Br
 
-
-data Coords = Coords { xPos::Int, yPos::Int } deriving (Show, Eq)
-
-data MinMaxTree = MinMaxTree { value::Int, board::Br.Board, nextSteps::[MinMaxTree]} | Empty
+data MinMaxTree = MinMaxTree { board::Br.Board, nextSteps::[MinMaxTree]} | Empty
 
 data ComparingTrees = ComparingTrees { mmTreevalue::Int, mmTree::MinMaxTree }
+data ComparingTree = ComparingTree { boardCT::Board, valueCT::Int }
 
-instance Ord Coords where
-    compare (Coords a b) (Coords c d)
-        |(b == d) = compare a c
-        |otherwise = compare b d
-
+-- Potrzebne jest nam przekazać 2 rzeczy, kto zaczyna i kim jest komputer
 
 -- ###################################################################
--- ##########     Neighborhood     ###################################
+-- ##########     MinMaxTree     #####################################
 -- ###################################################################
 
-neighborhood:: [[Part]] -> [Coords]
-neighborhood arr 
-    | (howMany arr (whoseMove (Br.Board arr))) > 0 = removeDuplicates (neighborhoodLine arr 0 arr)
-    | (((howMany arr (whoseMove (Br.Board arr))) == 0) && ((length arr) > 5)) = ([Coords 4 4] ++ [Coords 3 4])
-    | (((howMany arr (whoseMove (Br.Board arr))) == 0) && ((length arr) <= 5)) = ([Coords 0 0] ++ [Coords 1 1])
+generateMinMaxTree:: Int -> Board -> Part -> MinMaxTree
+generateMinMaxTree deep boardArr whoStarted = generateMoves deep boardArr (whoseMove boardArr whoStarted) whoStarted
 
-neighborhoodLine:: [[Part]] -> Int -> [[Part]] -> [Coords]
-neighborhoodLine arr ity [] = []
-neighborhoodLine arr ity (x:xs) = ((neighborhoodCoord arr ity 0 x) ++ (neighborhoodLine arr (ity+1) xs))
+generateMoves:: Int -> Board -> Part -> Part -> MinMaxTree
+generateMoves deep boardArr u whoStarted
+    | deep > 0 = MinMaxTree boardArr (minMaxChildren deep boardArr (neighborhood boardArr) u whoStarted)
+    | otherwise = MinMaxTree boardArr []
 
-neighborhoodCoord:: [[Part]] -> Int -> Int -> [Part] -> [Coords]
-neighborhoodCoord arr ity itx [] = []
-neighborhoodCoord arr ity itx (x:xs) = ((neighborhoodSelectedCoord arr itx ity) ++ (neighborhoodCoord arr ity (itx+1) xs))
+minMaxChildren:: Int -> Board -> [Coords] -> Part -> Part -> [MinMaxTree]
+minMaxChildren deep boardArr [] u whoStarted = []
+minMaxChildren deep boardArr (x:xs) u whoStarted = ((generateMove deep boardArr x u whoStarted):[]) ++ (minMaxChildren deep boardArr xs u whoStarted)
 
-neighborhoodSelectedCoord:: [[Part]] -> Int -> Int -> [Coords]
-neighborhoodSelectedCoord arr x y
-    | ((arr !! x) !! y) /= (whoseMove (Br.Board arr)) = []
-    | ((arr !! x) !! y) == (whoseMove (Br.Board arr)) = createNeighborhood arr x y
-
-createNeighborhood:: [[Part]] -> Int -> Int -> [Coords]
-createNeighborhood arr x y = 
-     (isRightNeighbor arr (x-1) (y-1)) ++ (isRightNeighbor arr x (y-1)) ++
-        (isRightNeighbor arr (x+1) (y-1)) ++ (isRightNeighbor arr (x-1) y) ++
-        (isRightNeighbor arr (x+1) y) ++ (isRightNeighbor arr (x-1) (y+1)) ++
-        (isRightNeighbor arr x (y+1)) ++ (isRightNeighbor arr (x+1) (y+1))
-
-isRightNeighbor:: [[Part]] -> Int -> Int -> [Coords]
-isRightNeighbor arr x y 
-    | ((((arr !! x) !! y) == E) && (x >= 0) && (y >= 0) && (x < (length arr)) && (x < (length arr))) 
-        = [(Coords x y)]
-    | ((((arr !! x) !! y) /= E) || (x < 0) || (y < 0) || (x >= (length arr)) || (x >= (length arr))) 
-        = []
-
-removeDuplicates :: Eq a => [a] -> [a]
-removeDuplicates = rdHelper []
-    where rdHelper seen [] = seen
-          rdHelper seen (x:xs)
-              | x `elem` seen = rdHelper seen xs
-              | otherwise = rdHelper (seen ++ [x]) xs
-
-merge :: [a] -> [a] -> [a]
-merge xs [] = xs
-merge [] ys = ys
-merge (x:xs) (y:ys) = x : y : merge xs ys
+generateMove:: Int -> Board -> Coords -> Part -> Part -> MinMaxTree
+generateMove deep boardArr (Coords x y) u whoStarted = generateMinMaxTree (deep-1) (Br.insertToBoard boardArr x y u) whoStarted
+-- generateMove deep boardArr (Coords x y) u = generateMinMaxTree (deep-1) (Br.insertBattle boardArr (x+1) (y+1) u)
 
 
 -- ###################################################################
 -- ##########     Rate Board     #####################################
 -- ###################################################################
 
-rateBoard board 
-    | (won board X) == True = 1
-    | (won board O) == True = -1
-    | finish board == False = 0
+rateBoard:: Board -> Part -> Int
+rateBoard board whoComp
+    | (won board whoComp) == True = 30
+    | (won board (Br.notPart whoComp)) == True = -30
+    | otherwise = 0
 
 
 -- ###################################################################
--- ##########     Whose move     #####################################
+-- ##########     Calculate Value     ################################
 -- ###################################################################
 
-whoseMove:: Board -> Part
-whoseMove board
-    | (howMany (Br.board board) X) == (howMany (Br.board board) O) = X
-    | (howMany (Br.board board) X) > (howMany (Br.board board) O) = O
-    | (howMany (Br.board board) X) < (howMany (Br.board board) O) = X
-
-howMany [] u = 0
-howMany (x:xs) u = howManyLine x u + howMany xs u
-
-howManyLine [] u = 0
-howManyLine (x:xs) u = howManyCoords x u + howManyLine xs u
-
-howManyCoords el u
-    | el == u = 1
-    | el /= u = 0
-
-notHisMove board 
-    | (whoseMove board) == X = O
-    | (whoseMove board) /= X = X
+minMaxTreeValue:: MinMaxTree -> Part -> Int
+minMaxTreeValue (MinMaxTree boardArr []) whoComp = rateBoard boardArr whoComp
+minMaxTreeValue (MinMaxTree boardArr nextSteps) whoComp = foldl (+) 0 [(minMaxTreeValue x whoComp) | x <- nextSteps]
 
 
 -- ###################################################################
--- ##########     MinMaxTree     #####################################
+-- ##########     Create CT Table     ################################
 -- ###################################################################
 
-generateMinMaxTree deep boardArr = generateMoves deep boardArr (whoseMove boardArr)
 
-generateMoves:: Int -> Board -> Part -> MinMaxTree
-generateMoves deep boardArr u
-    | deep > 0 = MinMaxTree 0 boardArr (minMaxChildren deep boardArr (neighborhood (Br.board boardArr)) u)
-    | deep == 0 = MinMaxTree 0 boardArr []
+createComparingTreesTableZero:: Board -> Part -> [ComparingTree]
+createComparingTreesTableZero board whoComp = [(ComparingTree (insertToBoard board (xPos x) (yPos x) whoComp) 0) | x <- (neighborhood board)]
 
-minMaxChildren:: Int -> Board -> [Coords] -> Part -> [MinMaxTree]
-minMaxChildren deep boardArr [] u = []
-minMaxChildren deep boardArr (x:xs) u = ((generateMove deep boardArr x u):[]) ++ (minMaxChildren deep boardArr xs u)
+setComparingTreeTableValue:: [ComparingTree] -> Part -> Part -> Int -> [ComparingTree]
+setComparingTreeTableValue ctTable whoComp whoStarted deep = [(ComparingTree (boardCT x) (minMaxTreeValue (generateMinMaxTree deep (boardCT x) whoStarted) whoComp)) | x <- ctTable]
 
-generateMove:: Int -> Board -> Coords -> Part -> MinMaxTree
-generateMove deep boardArr (Coords x y) u = generateMinMaxTree (deep-1) (Br.insertToBoard boardArr (x+1) (y+1) u)
--- generateMove deep boardArr (Coords x y) u = generateMinMaxTree (deep-1) (Br.insertBattle boardArr (x+1) (y+1) u)
 
+-- ###################################################################
+-- ##########     Select Best Board     ##############################
+-- ###################################################################
+
+selectBestBoard:: [ComparingTree] -> Board
+selectBestBoard ctList = (boardCT (chooseCTBest ctList (ComparingTree (initNewBoard 1) (-1000))))
+
+chooseCTBest:: [ComparingTree] -> ComparingTree -> ComparingTree
+chooseCTBest [] best = best
+chooseCTBest (x:xs) (ComparingTree boardBest valueBest)
+    | (valueBest >= (valueCT x)) = chooseCTBest xs (ComparingTree boardBest valueBest)
+    | otherwise = chooseCTBest xs x
+
+
+-- ###################################################################
+-- ##########     Next Step     ######################################
+-- ###################################################################
+
+nextStep:: Board -> Part -> Part -> Int -> Board
+nextStep board whoComp whoStarted deep = selectBestBoard (setComparingTreeTableValue (createComparingTreesTableZero board whoComp) whoComp whoStarted deep)
 
 -- ###################################################################
 -- ##########     Apply Values To MinMaxTree     #####################
 -- ###################################################################
 
-calculateMMTValue (MinMaxTree val boardArr []) = rateBoard boardArr
-calculateMMTValue (MinMaxTree val boardArr children) = calculateMMTValueTab children
+-- calculateMMTValue (MinMaxTree val boardArr []) = rateBoard boardArr
+-- calculateMMTValue (MinMaxTree val boardArr children) = calculateMMTValueTab children
 
-calculateMMTValueTab [] = 0
-calculateMMTValueTab (x:xs) = (calculateMMTValue x) + calculateMMTValueTab xs
+-- calculateMMTValueTab [] = 0
+-- calculateMMTValueTab (x:xs) = (calculateMMTValue x) + calculateMMTValueTab xs
 
-generateComparingTreeTable [] = []
-generateComparingTreeTable (x:xs) = ((ComparingTrees (calculateMMTValue x) x):[]) ++ generateComparingTreeTable xs
+-- generateComparingTreeTable [] = []
+-- generateComparingTreeTable (x:xs) = ((ComparingTrees (calculateMMTValue x) x):[]) ++ generateComparingTreeTable xs
 
 -- ###################################################################
 -- ##########     Select Best Board     ##############################
 -- ###################################################################
     
-selectBestFromComparingTreeTable:: [ComparingTrees] -> ComparingTrees -> ComparingTrees
-selectBestFromComparingTreeTable [] bestOption = bestOption
-selectBestFromComparingTreeTable (x:xs) bestOption
-    | (mmTreevalue x) > (mmTreevalue (selectBestFromComparingTreeTable xs bestOption)) = x
-    | (mmTreevalue x) <= (mmTreevalue (selectBestFromComparingTreeTable xs bestOption)) = (selectBestFromComparingTreeTable xs bestOption)
+-- selectBestFromComparingTreeTable:: [ComparingTrees] -> ComparingTrees -> ComparingTrees
+-- selectBestFromComparingTreeTable [] bestOption = bestOption
+-- selectBestFromComparingTreeTable (x:xs) bestOption
+--     | (mmTreevalue x) > (mmTreevalue (selectBestFromComparingTreeTable xs bestOption)) = x
+--     | (mmTreevalue x) <= (mmTreevalue (selectBestFromComparingTreeTable xs bestOption)) = (selectBestFromComparingTreeTable xs bestOption)
 
-selectBestBoard:: MinMaxTree -> Br.Board
-selectBestBoard minMaxTree = (Minmax.board (mmTree (selectBestFromComparingTreeTable (generateComparingTreeTable (nextSteps minMaxTree)) (ComparingTrees (-20) Minmax.Empty))))
+-- selectBestBoard:: MinMaxTree -> Br.Board
+-- selectBestBoard minMaxTree = (Minmax.board (mmTree (selectBestFromComparingTreeTable (generateComparingTreeTable (nextSteps minMaxTree)) (ComparingTrees (-20) Minmax.Empty))))
 
-nextStep:: Br.Board -> Br.Board
-nextStep boardArr = selectBestBoard (generateMinMaxTree 3 boardArr)
-
-
-
-
-
-
-
-
-
-
-
+-- nextStep:: Br.Board -> Br.Board
+-- nextStep boardArr = selectBestBoard (generateMinMaxTree 3 boardArr)
 
 -- ## ma zwrocic liste coords
 -- moreNeighborhood board ratio =  
@@ -176,3 +127,22 @@ nextStep boardArr = selectBestBoard (generateMinMaxTree 3 boardArr)
     -- wygenerować sasiedztwo, policzyc dla nich mozliwosci
     -- funkcja oceny planszy musi byc ambitniejsza
     -- np. przerobienie sprawdzania czy jest zwyciestwo
+
+
+
+-- ###################################################################
+-- ##########     TESTS     ##########################################
+-- ###################################################################
+
+testBoard = initNewBoard 5
+testBoard1 = insertToBoard testBoard 1 2 X
+testBoard2 = insertToBoard testBoard1 2 3 O
+testBoard3 = insertToBoard testBoard2 1 4 X
+testBoard4 = insertToBoard testBoard3 2 2 O
+testBoard5 = insertToBoard testBoard4 1 3 X
+testBoard6 = insertToBoard testBoard5 2 1 O
+testBoard7 = insertToBoard testBoard6 1 2 X
+testValueMMT = minMaxTreeValue (generateMinMaxTree 4 testBoard7 X) O
+
+
+testSelectBest1 = selectBestBoard (setComparingTreeTableValue (createComparingTreesTableZero testBoard7 O) O X 3)
