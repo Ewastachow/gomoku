@@ -5,20 +5,9 @@ import Data.List
 import Control.Lens
 
 
-alphabet = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","W","Y","Z"]
+alphabet = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','W','Y','Z']
 
-data Part = X | O | E
-
-instance Eq Part where
-    X == X = True
-    O == O = True
-    E == E = True
-    X == O = False
-    X == E = False
-    O == X = False
-    E == X = False
-    E == O = False
-    O == E = False
+data Part = X | O | E deriving Eq
 
 instance Show Part where
     show X = "X"
@@ -58,12 +47,12 @@ initBoard size u = Board [ [ u | x <- [0..size-1] ] | y <- [0..size-1]]
 
 showBoardAll:: [[Part]] -> String        
 showBoardAll arr =
-    "     " ++ showFirstLine 0 (length arr) ++ "\n" ++ showBoard 1 arr
+    "\n     " ++ showFirstLine 0 (length arr) ++ "\n" ++ showBoard 1 arr
 
 showFirstLine:: Int -> Int -> String    
 showFirstLine it size
-    | it < size = show (it+1) ++ " " ++ showFirstLine (it+1) size
---    | it < size = (alphabet !! it) ++ " " ++ showFirstLine (it+1) size
+--    | it < size = show (it+1) ++ " " ++ showFirstLine (it+1) size
+    | it < size = [(alphabet !! it)] ++ " " ++ showFirstLine (it+1) size
     | it >= size = ""
 
 showBoard:: Int -> [[Part]] -> String
@@ -169,6 +158,50 @@ insertPart arr x y posX posY u
 -- ###################################################################
 -- ##########     Is Won     #########################################
 -- ###################################################################
+finished = [X,X,X,X,X]
+
+-- finish:: Board -> Bool
+-- finish board = ((won board X) || (won board O))
+
+-- won:: Board -> Part -> Bool
+-- won (Board arr) u = wonBoard arr arr u 0
+
+-- wonBoard:: [[Part]] -> [[Part]] -> Part -> Int -> Bool
+-- wonBoard _ [] _ _ = False
+-- wonBoard arr (x:xs) u it = ((wonLine arr it arr u 0) || (wonBoard arr xs u (it+1)))
+
+-- wonLine:: [[Part]] -> Int -> [[Part]] -> Part -> Int -> Bool
+-- wonLine _ _ [] _ _ = False
+-- wonLine arr x (y:ys) u it = ((hasX arr x it u 5) || (wonLine arr x ys u (it+1)))
+
+-- hasX:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+-- hasX arr x y u howMany
+--     |(getPartFromArr arr x y) == u = ((hasXVertical arr x y u howMany) || (hasXHorizontally arr x y u howMany) || (hasXBias arr x y u howMany) || (hasXBiasCross arr x y u howMany))
+--     |otherwise = False
+
+-- hasXVertical:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+-- hasXVertical _ _ _ _ 0 = True
+-- hasXVertical arr x y u it 
+--     |y >= 0 = (((getPartFromArr arr x y) == u) && (hasXVertical arr x (y-1) u (it-1)))
+--     |otherwise = False
+
+-- hasXHorizontally:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+-- hasXHorizontally _ _ _ _ 0 = True
+-- hasXHorizontally arr x y u it 
+--     |x >= 0 = (((getPartFromArr arr x y) == u) && (hasXHorizontally arr (x-1) y u (it-1)))
+--     |otherwise = False
+
+-- hasXBias:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+-- hasXBias _ _ _ _ 0 = True
+-- hasXBias arr x y u it 
+--     |((x >= 0) && (y >= 0)) = (((getPartFromArr arr x y) == u) && (hasXBias arr (x-1) (y-1) u (it-1)))
+--     |otherwise = False
+
+-- hasXBiasCross:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
+-- hasXBiasCross _ _ _ _ 0 = True
+-- hasXBiasCross arr x y u it 
+--     |((x >= 0) && (y >= 0) && (y < (length arr))) = (((getPartFromArr arr x y) == u) && (hasXBiasCross arr (x-1) (y+1) u (it-1)))
+--     |otherwise = False
 
 finish:: Board -> Bool
 finish board = ((won board X) || (won board O))
@@ -182,39 +215,41 @@ wonBoard arr (x:xs) u it = ((wonLine arr it arr u 0) || (wonBoard arr xs u (it+1
 
 wonLine:: [[Part]] -> Int -> [[Part]] -> Part -> Int -> Bool
 wonLine _ _ [] _ _ = False
-wonLine arr x (y:ys) u it = ((hasX arr x it u 5) || (wonLine arr x ys u (it+1)))
+wonLine arr x (y:ys) u it = ((hasX arr x it u 5 finished) || (wonLine arr x ys u (it+1)))
 
-hasX:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
-hasX arr x y u howMany
-    |(getPartFromArr arr x y) == u = ((hasXVertical arr x y u howMany) || (hasXHorizontally arr x y u howMany) || (hasXBias arr x y u howMany) || (hasXBiasCross arr x y u howMany))
+hasX:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
+hasX arr x y u howMany table
+    |(getPartFromArr arr x y) == u = ((hasXVertical arr x y u howMany table) || (hasXHorizontally arr x y u howMany table) || (hasXBias arr x y u howMany table) || (hasXBiasCross arr x y u howMany table))
     |otherwise = False
 
-hasXVertical:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
-hasXVertical _ _ _ _ 0 = True
-hasXVertical arr x y u it 
-    |y >= 0 = (((getPartFromArr arr x y) == u) && (hasXVertical arr x (y-1) u (it-1)))
+hasXVertical:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
+hasXVertical _ _ _ _ 0 _ = True
+hasXVertical _ _ _ _ _ [] = True
+hasXVertical arr x y u it (t:table)
+    |(areCoordsArrValid arr x y) = (((getPartFromArr arr x y) == t) && (hasXVertical arr x (y-1) u (it-1) table))
     |otherwise = False
 
-hasXHorizontally:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
-hasXHorizontally _ _ _ _ 0 = True
-hasXHorizontally arr x y u it 
-    |x >= 0 = (((getPartFromArr arr x y) == u) && (hasXHorizontally arr (x-1) y u (it-1)))
+hasXHorizontally:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
+hasXHorizontally _ _ _ _ 0 _ = True
+hasXHorizontally _ _ _ _ _ [] = True
+hasXHorizontally arr x y u it (t:table)
+    |(areCoordsArrValid arr x y) = (((getPartFromArr arr x y) == t) && (hasXHorizontally arr (x-1) y u (it-1) table))
     |otherwise = False
 
-hasXBias:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
-hasXBias _ _ _ _ 0 = True
-hasXBias arr x y u it 
-    |((x >= 0) && (y >= 0)) = (((getPartFromArr arr x y) == u) && (hasXBias arr (x-1) (y-1) u (it-1)))
+hasXBias:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
+hasXBias _ _ _ _ 0 _ = True
+hasXBias _ _ _ _ _ [] = True
+hasXBias arr x y u it (t:table)
+    |(areCoordsArrValid arr x y) = (((getPartFromArr arr x y) == t) && (hasXBias arr (x-1) (y-1) u (it-1) table))
     |otherwise = False
 
-hasXBiasCross:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
-hasXBiasCross _ _ _ _ 0 = True
-hasXBiasCross arr x y u it 
-    |((x >= 0) && (y >= 0) && (y < (length arr))) = (((getPartFromArr arr x y) == u) && (hasXBiasCross arr (x-1) (y+1) u (it-1)))
+hasXBiasCross:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
+hasXBiasCross _ _ _ _ 0 _ = True
+hasXBiasCross _ _ _ _ _ [] = True
+hasXBiasCross arr x y u it (t:table)
+    |(areCoordsArrValid arr x y) = (((getPartFromArr arr x y) == t) && (hasXBiasCross arr (x-1) (y+1) u (it-1) table))
     |otherwise = False
-
-    -- to ostatnie chyba nie działa
-
+    
 
 -- ###################################################################
 -- ##########     Whose was last move     ############################

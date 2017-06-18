@@ -1,6 +1,8 @@
 module Main where
 
 import Data.String
+import Data.List
+import Data.Maybe
 import Board as Br
 import Minmax as Mm
 import System.IO(hFlush, stdout)
@@ -8,6 +10,8 @@ import System.IO(hFlush, stdout)
 -- zaczyna człowiek X
 -- wymiar planszy to 15
 -- deep 3
+
+-- fromJust $ elemIndex 3 [1,2,3,4]
 
 main::IO()
 main = game (initBoard 15 E) "x"
@@ -18,7 +22,6 @@ game board "x" = do
     execute board "have won"
   else do
     print board
-    putStr "gomoku> "
     hFlush stdout
     execute board "x"
 game board "pc" = do
@@ -33,15 +36,19 @@ execute _ "quit" = putStrLn "Game is closed."
 execute board "pc" = do
   game (nextStep board O X 2) "x"
 execute board "x" = do
-  putStrLn "Vertical: "
+  putStr "Vertical: "
   x <- getLine
-  putStrLn "Horizontal: "
-  y <- getLine
-  if(((read x :: Int) < 1) || ((read x :: Int) > (length (Br.board board))) || ((read y :: Int) < 1) || ((read y :: Int) > (length (Br.board board)))) 
+  let xx = (read x :: Int) 
+  putStr "Horizontal: "
+--  y <- getLine
+--  let yy = (read y :: Int)
+  y <- getChar
+  let yy = ((fromJust $ elemIndex y alphabet)+1)
+  if((xx < 1) || (xx > (length (Br.board board))) || (yy < 1) || (yy > (length (Br.board board)))) 
     then do
       putStrLn " \n Wrong Coords, Try once again \n "
       execute board "x"
-  else game (insertToBoard board ((read x :: Int)-1) ((read y :: Int)-1) X) "pc"
+  else game (insertToBoard board (xx-1) (yy-1) X) "pc"
 execute board "have won" =
   putStrLn (show board ++ "Player have won!")
 execute board _ = do

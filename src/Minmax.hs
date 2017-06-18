@@ -35,6 +35,10 @@ generateMove deep boardArr (Coords x y) u whoStarted = generateMinMaxTree (deep-
 -- ##########     Rate Board     #####################################
 -- ###################################################################
 
+rate1 = [E,E,X,X,X]
+rate2 = [E,X,X,X,E]
+rate3 = [E,X,X,X,X]
+
 rateBoard:: Board -> Part -> Int
 rateBoard board whoComp
     | (won board whoComp) == True = 100000
@@ -42,24 +46,61 @@ rateBoard board whoComp
     | otherwise = calculateBoardValue board whoComp 
 
 calculateBoardValue:: Board -> Part -> Int
-calculateBoardValue (Board arr) whoComp = (howManyRate arr arr whoComp 0 4)
+calculateBoardValue (Board arr) whoComp = (howManyRate arr arr whoComp 0)
 
-howManyRate:: [[Part]] -> [[Part]] -> Part -> Int -> Int -> Int
-howManyRate _ [] _ _ _ = 0
-howManyRate arr (x:xs) u it size = (howManyRateLine arr it x u 0 size) + (howManyRate arr xs u (it+1) size) 
+howManyRate:: [[Part]] -> [[Part]] -> Part -> Int -> Int
+howManyRate _ [] _ _  = 0
+howManyRate arr (x:xs) u it = (howManyRateLine arr it x u 0) + (howManyRate arr xs u (it+1) ) 
 
-howManyRateLine:: [[Part]] -> Int -> [Part] -> Part -> Int -> Int -> Int 
-howManyRateLine _ _ [] _ _ _ = 0
-howManyRateLine arr x (y:ys) u it size
-    | y == u = (howManyRateCoords arr x it u size) + (howManyRateLine arr x ys u (it+1) size)
-    | y == (notPart u) = ((0 - (howManyRateCoords arr x it (notPart u) size)) + (howManyRateLine arr x ys u (it+1) size))
-    | otherwise = 0 + (howManyRateLine arr x ys u (it+1) size)
+howManyRateLine:: [[Part]] -> Int -> [Part] -> Part -> Int -> Int 
+howManyRateLine _ _ [] _ _  = 0
+howManyRateLine arr x (y:ys) u it
+    | y == u = (howManyRateCoords arr x it u) + (howManyRateLine arr x ys u (it+1))
+    | y == (notPart u) = ((0 - (howManyRateCoords arr x it (notPart u))) + (howManyRateLine arr x ys u (it+1)))
+    | otherwise = 0 + (howManyRateLine arr x ys u (it+1))
 
-howManyRateCoords:: [[Part]] -> Int -> Int -> Part -> Int -> Int
-howManyRateCoords arr x y u size 
-    | (Br.hasX arr x y u size) == True = 400
-    | (Br.hasX arr x y u (size-1)) == True = 300
-    | otherwise = 0
+howManyRateCoords:: [[Part]] -> Int -> Int -> Part -> Int
+howManyRateCoords arr x y u = calculateRate arr x y u
+
+calculateRate:: [[Part]] -> Int -> Int -> Part -> Int
+calculateRate arr x y u = (isRateCoords arr x y u rate1 2)*300 + 
+                          (isRateCoords arr x y u rate2 1)*300 + 
+                          (isRateCoords arr x y u (reverse rate1) 0)*300 +
+                          (isRateCoords arr x y u rate3 1)*500 +
+                          (isRateCoords arr x y u (reverse rate3) 0)*500 
+
+isRateCoords:: [[Part]] -> Int -> Int -> Part -> [Part] -> Int -> Int
+isRateCoords arr x y u table ilEPocz = 
+    if(hasXVertical arr x (y+ilEPocz) u (length table) table) then 
+        if(hasXHorizontally arr (x+ilEPocz) y u (length table) table) then  
+            if(hasXBias arr (x+ilEPocz) (y+ilEPocz) u (length table) table) then 
+                if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 6 
+                    else 5
+                else if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 5 
+                    else 4
+            else if(hasXBias arr (x+ilEPocz) (y+ilEPocz) u (length table) table) then 
+                if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 4
+                    else 3
+                else if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 3 
+                    else 2
+        else if(hasXHorizontally arr (x+ilEPocz) y u (length table) table) then  
+            if(hasXBias arr (x+ilEPocz) (y+ilEPocz) u (length table) table) then 
+                if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 3 
+                    else 2
+                else if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 2 
+                    else 1
+            else if(hasXBias arr (x+ilEPocz) (y+ilEPocz) u (length table) table) then 
+                if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 3
+                    else 2
+                else if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 2 
+                    else 0
+    
+
+-- howManyRateCoords:: [[Part]] -> Int -> Int -> Part -> Int -> Int
+-- howManyRateCoords arr x y u size 
+--     | (Br.hasX arr x y u size) == True = 400
+--     | (Br.hasX arr x y u (size-1)) == True = 300
+--     | otherwise = 0
 
 -- ###################################################################
 -- ##########     Calculate Value     ################################
