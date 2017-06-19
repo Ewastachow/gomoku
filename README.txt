@@ -1,0 +1,4 @@
+Gomoku - Ewa Stachów
+
+Compilation:
+	

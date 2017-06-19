@@ -154,50 +154,8 @@ insertPart arr x y posX posY u
 -- ###################################################################
 -- ##########     Is Won     #########################################
 -- ###################################################################
+
 finished = [X,X,X,X,X]
-
--- finish:: Board -> Bool
--- finish board = ((won board X) || (won board O))
-
--- won:: Board -> Part -> Bool
--- won (Board arr) u = wonBoard arr arr u 0
-
--- wonBoard:: [[Part]] -> [[Part]] -> Part -> Int -> Bool
--- wonBoard _ [] _ _ = False
--- wonBoard arr (x:xs) u it = ((wonLine arr it arr u 0) || (wonBoard arr xs u (it+1)))
-
--- wonLine:: [[Part]] -> Int -> [[Part]] -> Part -> Int -> Bool
--- wonLine _ _ [] _ _ = False
--- wonLine arr x (y:ys) u it = ((hasX arr x it u 5) || (wonLine arr x ys u (it+1)))
-
--- hasX:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
--- hasX arr x y u howMany
---     |(getPartFromArr arr x y) == u = ((hasXVertical arr x y u howMany) || (hasXHorizontally arr x y u howMany) || (hasXBias arr x y u howMany) || (hasXBiasCross arr x y u howMany))
---     |otherwise = False
-
--- hasXVertical:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
--- hasXVertical _ _ _ _ 0 = True
--- hasXVertical arr x y u it 
---     |y >= 0 = (((getPartFromArr arr x y) == u) && (hasXVertical arr x (y-1) u (it-1)))
---     |otherwise = False
-
--- hasXHorizontally:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
--- hasXHorizontally _ _ _ _ 0 = True
--- hasXHorizontally arr x y u it 
---     |x >= 0 = (((getPartFromArr arr x y) == u) && (hasXHorizontally arr (x-1) y u (it-1)))
---     |otherwise = False
-
--- hasXBias:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
--- hasXBias _ _ _ _ 0 = True
--- hasXBias arr x y u it 
---     |((x >= 0) && (y >= 0)) = (((getPartFromArr arr x y) == u) && (hasXBias arr (x-1) (y-1) u (it-1)))
---     |otherwise = False
-
--- hasXBiasCross:: [[Part]] -> Int -> Int -> Part -> Int -> Bool
--- hasXBiasCross _ _ _ _ 0 = True
--- hasXBiasCross arr x y u it 
---     |((x >= 0) && (y >= 0) && (y < (length arr))) = (((getPartFromArr arr x y) == u) && (hasXBiasCross arr (x-1) (y+1) u (it-1)))
---     |otherwise = False
 
 finish:: Board -> Bool
 finish board = ((won board X) || (won board O))
@@ -215,7 +173,10 @@ wonLine arr x (y:ys) u it = ((hasX arr x it u 5 finished) || (wonLine arr x ys u
 
 hasX:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
 hasX arr x y u howMany table
-    |(getPartFromArr arr x y) == u = ((hasXVertical arr x y u howMany table) || (hasXHorizontally arr x y u howMany table) || (hasXBias arr x y u howMany table) || (hasXBiasCross arr x y u howMany table))
+    |(getPartFromArr arr x y) == u = ((hasXVertical arr x y u howMany table) || 
+        (hasXHorizontally arr x y u howMany table) || 
+        (hasXBias arr x y u howMany table) || 
+        (hasXBiasCross arr x y u howMany table))
     |otherwise = False
 
 hasXVertical:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
@@ -329,94 +290,3 @@ removeDuplicates = rdHelper []
           rdHelper seen (x:xs)
               | x `elem` seen = rdHelper seen xs
               | otherwise = rdHelper (seen ++ [x]) xs
-
-
--- ###################################################################
--- ##########     Tests     ##########################################
--- ###################################################################
-
--- InitBoard
-
-testInitE = initBoard 5 E
-testInitX = initBoard 5 X
-testInitO = initBoard 5 O
-testInit = initNewBoard 6
-
--- Validity
-
-testValidity1 = areCoordsBoardValid testInit 0 0 -- True
-testValidity2 = areCoordsBoardValid testInit 5 5 -- True
-testValidity3 = areCoordsBoardValid testInit 6 6 -- False
-testValidity4 = areCoordsBoardValid testInit (-1) (-1) -- False
-
--- Not Part
-
-testNotPart1 = notPart X -- O
-testNotPart2 = notPart O -- X
-testNotPart3 = notPart E -- _
-
--- Occupied
-
-testOccupied1 = isOccupiedBoard testInsert2 2 4 -- True
-testOccupied2 = isOccupiedBoard testInsert2 1 5 -- False
-
--- Full
-
-testFull1 = isBoardFull testInitX -- True
-testFull2 = isBoardFull testInit -- False
-testFull3 = isBoardFull (insertToBoard testInsert2 3 3 O) -- False
-
--- Insert
-
-testInsert1 = insertToBoard testInit 4 4 X
-testInsert2 = insertToBoard testInit 2 4 X
-testInsert3 = insertToBoard testInit 3 1 X
-testInsert4 = insertToBoard testInit 1 1 O
-testInsert5 = insertToBoard testInit 0 0 O
-testInsert6 = insertToBoard testInit 5 5 O
-testInsert7 = insertToBoard testInit 6 6 O -- Still empty board
-
--- Get Part
-
-testPart1 = getPartFromBoard testInsert3 3 1 -- X
-
--- Whose move
-
-testWhoseMove1 = whoseMove testInsert2 X -- O
-testWhoseMove2 = whoseMove testInsert2 O -- O
-tmp1 = insertToBoard testInsert2 2 2 O
-testWhoseMove3 = whoseMove tmp1 O -- O
-testWhoseMove4 = whoseMove tmp1 X -- X
-
--- Neighborhood
-
-testNeighborhood1 = neighborhood testInsert2 -- normal
-testNeighborhood2 = neighborhood testInsert5 -- 0 0
-testNeighborhood3 = neighborhood testInsert6 -- max max
-
-
--- Winning
-
-tmp1Winning = initNewBoard 19
-tmp1Winning1 = insertToBoard tmp1Winning 7 5 X
-tmp1Winning2 = insertToBoard tmp1Winning1 6 6 X
-tmp1Winning3 = insertToBoard tmp1Winning2 5 7 X
-tmp1Winning4 = insertToBoard tmp1Winning3 4 8 X
-tmp1Winning5 = insertToBoard tmp1Winning4 3 9 X
-testWinning1 = finish tmp1Winning5
-
-tmp2Winning = initNewBoard 19
-tmp2Winning1 = insertToBoard tmp2Winning 5 5 X
-tmp2Winning2 = insertToBoard tmp2Winning1 5 6 X
-tmp2Winning3 = insertToBoard tmp2Winning2 5 7 X
-tmp2Winning4 = insertToBoard tmp2Winning3 5 8 X
-tmp2Winning5 = insertToBoard tmp2Winning4 5 9 X
-testWinning2 = finish tmp2Winning5
-
-tmp3Winning = initNewBoard 9
-tmp3Winning1 = insertToBoard tmp3Winning 0 0 O
-tmp3Winning2 = insertToBoard tmp3Winning1 1 0 O
-tmp3Winning3 = insertToBoard tmp3Winning2 2 0 O
-tmp3Winning4 = insertToBoard tmp3Winning3 3 0 O
-tmp3Winning5 = insertToBoard tmp3Winning4 4 0 O
-testWinning3 = won tmp3Winning5 O
