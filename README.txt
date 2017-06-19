@@ -1,4 +1,11 @@
 Gomoku - Ewa Stachów
 
-Compilation:
-	
+
+Compile:
+
+	$ ghc -o gomokuES Main.hs
+
+
+Run:
+
+	$ ./gomokuES
