@@ -1,4 +1,5 @@
 module Minmax where
+-- Ewa Stachów
 
 import Board as Br
 

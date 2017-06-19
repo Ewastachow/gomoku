@@ -1,4 +1,5 @@
 module Main where
+-- Ewa Stachów
 
 import Data.List
 import Data.Maybe
