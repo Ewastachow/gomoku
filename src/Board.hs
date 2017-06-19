@@ -1,9 +1,5 @@
 module Board where
 
-import Data.String
-import Data.List
-import Control.Lens
-
 
 alphabet = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','W','Y','Z']
 
@@ -226,28 +222,32 @@ hasXVertical:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
 hasXVertical _ _ _ _ 0 _ = True
 hasXVertical _ _ _ _ _ [] = True
 hasXVertical arr x y u it (t:table)
-    |(areCoordsArrValid arr x y) = (((getPartFromArr arr x y) == t) && (hasXVertical arr x (y-1) u (it-1) table))
+    |(areCoordsArrValid arr x y) && (t == E) = (((getPartFromArr arr x y) == t) && (hasXVertical arr x (y-1) u (it-1) table))
+    |(areCoordsArrValid arr x y) && (t /= E) = (((getPartFromArr arr x y) == u) && (hasXVertical arr x (y-1) u (it-1) table))
     |otherwise = False
 
 hasXHorizontally:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
 hasXHorizontally _ _ _ _ 0 _ = True
 hasXHorizontally _ _ _ _ _ [] = True
 hasXHorizontally arr x y u it (t:table)
-    |(areCoordsArrValid arr x y) = (((getPartFromArr arr x y) == t) && (hasXHorizontally arr (x-1) y u (it-1) table))
+    |(areCoordsArrValid arr x y) && (t == E) = (((getPartFromArr arr x y) == t) && (hasXHorizontally arr (x-1) y u (it-1) table))
+    |(areCoordsArrValid arr x y) && (t /= E) = (((getPartFromArr arr x y) == u) && (hasXHorizontally arr (x-1) y u (it-1) table))
     |otherwise = False
 
 hasXBias:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
 hasXBias _ _ _ _ 0 _ = True
 hasXBias _ _ _ _ _ [] = True
 hasXBias arr x y u it (t:table)
-    |(areCoordsArrValid arr x y) = (((getPartFromArr arr x y) == t) && (hasXBias arr (x-1) (y-1) u (it-1) table))
+    |(areCoordsArrValid arr x y) && (t == E) = (((getPartFromArr arr x y) == t) && (hasXVertical arr x (y-1) u (it-1) table))
+    |(areCoordsArrValid arr x y) && (t /= E) = (((getPartFromArr arr x y) == u) && (hasXBias arr (x-1) (y-1) u (it-1) table))
     |otherwise = False
 
 hasXBiasCross:: [[Part]] -> Int -> Int -> Part -> Int -> [Part] -> Bool
 hasXBiasCross _ _ _ _ 0 _ = True
 hasXBiasCross _ _ _ _ _ [] = True
 hasXBiasCross arr x y u it (t:table)
-    |(areCoordsArrValid arr x y) = (((getPartFromArr arr x y) == t) && (hasXBiasCross arr (x-1) (y+1) u (it-1) table))
+    |(areCoordsArrValid arr x y) && (t == E) = (((getPartFromArr arr x y) == t) && (hasXVertical arr x (y-1) u (it-1) table))
+    |(areCoordsArrValid arr x y) && (t /= E) = (((getPartFromArr arr x y) == u) && (hasXBiasCross arr (x-1) (y+1) u (it-1) table))
     |otherwise = False
     
 
@@ -412,3 +412,11 @@ tmp2Winning3 = insertToBoard tmp2Winning2 5 7 X
 tmp2Winning4 = insertToBoard tmp2Winning3 5 8 X
 tmp2Winning5 = insertToBoard tmp2Winning4 5 9 X
 testWinning2 = finish tmp2Winning5
+
+tmp3Winning = initNewBoard 9
+tmp3Winning1 = insertToBoard tmp3Winning 0 0 O
+tmp3Winning2 = insertToBoard tmp3Winning1 1 0 O
+tmp3Winning3 = insertToBoard tmp3Winning2 2 0 O
+tmp3Winning4 = insertToBoard tmp3Winning3 3 0 O
+tmp3Winning5 = insertToBoard tmp3Winning4 4 0 O
+testWinning3 = won tmp3Winning5 O

@@ -1,8 +1,5 @@
 module Minmax where
 
-import Data.String
-import Control.Lens
-import Data.List as List
 import Board as Br
 
 
@@ -35,9 +32,17 @@ generateMove deep boardArr (Coords x y) u whoStarted = generateMinMaxTree (deep-
 -- ##########     Rate Board     #####################################
 -- ###################################################################
 
-rate1 = [E,E,X,X,X]
-rate2 = [E,X,X,X,E]
-rate3 = [E,X,X,X,X]
+rate41 = [E,X,X,X,X]
+rate42 = [X,X,X,E,X]
+rate43 = [X,X,E,X,X]
+
+rate31 = [E,E,X,X,X]
+rate32 = [E,X,X,X,E]
+rate33 = [E,X,E,X,X]
+rate34 = [E,X,X,E,X]
+
+rate21 = [E,E,E,X,X]
+rate22 = [E,E,X,X,E]
 
 rateBoard:: Board -> Part -> Int
 rateBoard board whoComp
@@ -63,44 +68,48 @@ howManyRateCoords:: [[Part]] -> Int -> Int -> Part -> Int
 howManyRateCoords arr x y u = calculateRate arr x y u
 
 calculateRate:: [[Part]] -> Int -> Int -> Part -> Int
-calculateRate arr x y u = (isRateCoords arr x y u rate1 2)*300 + 
-                          (isRateCoords arr x y u rate2 1)*300 + 
-                          (isRateCoords arr x y u (reverse rate1) 0)*300 +
-                          (isRateCoords arr x y u rate3 1)*500 +
-                          (isRateCoords arr x y u (reverse rate3) 0)*500 
+calculateRate arr x y u = (isRateCoords arr x y u rate41 1)*700 +
+                          (isRateCoords arr x y u (reverse rate41) 0)*700 +
+                          (isRateCoords arr x y u rate42 1)*700 +
+                          (isRateCoords arr x y u (reverse rate42) 0)*700 +
+                          (isRateCoords arr x y u rate43 1)*700 +
+                          (isRateCoords arr x y u rate31 2)*300 + 
+                          (isRateCoords arr x y u (reverse rate31) 0)*300 +
+                          (isRateCoords arr x y u rate32 1)*300 + 
+                          (isRateCoords arr x y u rate33 2)*300 + 
+                          (isRateCoords arr x y u (reverse rate33) 0)*300 +
+                          (isRateCoords arr x y u rate34 2)*300 + 
+                          (isRateCoords arr x y u (reverse rate34) 0)*300 +
+                          (isRateCoords arr x y u rate21 1)*30 +
+                          (isRateCoords arr x y u (reverse rate21) 0)*30 +
+                          (isRateCoords arr x y u rate22 1)*30 +
+                          (isRateCoords arr x y u (reverse rate22) 0)*30 
 
 isRateCoords:: [[Part]] -> Int -> Int -> Part -> [Part] -> Int -> Int
 isRateCoords arr x y u table ilEPocz = 
-    if(hasXVertical arr x (y+ilEPocz) u (length table) table) then 
-        if(hasXHorizontally arr (x+ilEPocz) y u (length table) table) then  
-            if(hasXBias arr (x+ilEPocz) (y+ilEPocz) u (length table) table) then 
-                if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 6 
-                    else 5
-                else if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 5 
-                    else 4
-            else if(hasXBias arr (x+ilEPocz) (y+ilEPocz) u (length table) table) then 
-                if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 4
-                    else 3
-                else if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 3 
-                    else 2
-        else if(hasXHorizontally arr (x+ilEPocz) y u (length table) table) then  
-            if(hasXBias arr (x+ilEPocz) (y+ilEPocz) u (length table) table) then 
-                if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 3 
-                    else 2
-                else if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 2 
-                    else 1
-            else if(hasXBias arr (x+ilEPocz) (y+ilEPocz) u (length table) table) then 
-                if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 3
-                    else 2
-                else if(hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) then 2 
-                    else 0
-    
+    setRateCoordsValue 
+        (hasXVertical arr x (y+ilEPocz) u (length table) table) 
+        (hasXHorizontally arr (x+ilEPocz) y u (length table) table) 
+        (hasXBias arr (x+ilEPocz) (y+ilEPocz) u (length table) table) 
+        (hasXBiasCross arr (x+ilEPocz) (y-ilEPocz) u (length table) table) 
 
--- howManyRateCoords:: [[Part]] -> Int -> Int -> Part -> Int -> Int
--- howManyRateCoords arr x y u size 
---     | (Br.hasX arr x y u size) == True = 400
---     | (Br.hasX arr x y u (size-1)) == True = 300
---     | otherwise = 0
+setRateCoordsValue:: Bool -> Bool -> Bool -> Bool -> Int
+setRateCoordsValue True True True True = 4
+setRateCoordsValue True True True False = 3
+setRateCoordsValue True True False True = 3
+setRateCoordsValue True False True True = 3
+setRateCoordsValue False True True True = 3
+setRateCoordsValue True True False False = 2
+setRateCoordsValue True False True False = 2
+setRateCoordsValue False True True False = 2
+setRateCoordsValue True False False True = 2
+setRateCoordsValue False True False True = 2
+setRateCoordsValue False False True True = 2
+setRateCoordsValue True False False False = 1
+setRateCoordsValue False True False False = 1
+setRateCoordsValue False False True False = 1
+setRateCoordsValue False False False True = 1
+setRateCoordsValue False False False False = 0
 
 -- ###################################################################
 -- ##########     Calculate Value     ################################
